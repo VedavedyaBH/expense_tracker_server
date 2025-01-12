@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum operations {
+  ADD
+  DELETE
+  UPDATE
+  VIEW
+}
+
+enum transactionType {
+  Income
+  Expense
+}
+
+model User {
+  id           Int           @id @unique @default(autoincrement())
+  phone_number String        @unique
+  expenses     Expense[]     @relation("UserExpenses")
+  incomes      Income[]      @relation("UserIncomes")
+  transactions Transaction[]
+
+  @@index([phone_number])
+}
+
+model Transaction {
+  id           Int             @id @unique @default(autoincrement())
+  type         transactionType
+  operation    operations
+  date         DateTime        @default(now())
+  category     String
+  amount       Float
+  user         User            @relation(fields: [phone_number], references: [phone_number])
+  phone_number String
+
+  @@index([type])
+  @@index([operation])
+  @@index([category])
+}
+
+model Expense {
+  id                Int              @id @unique @default(autoincrement())
+  description       String
+  amount            Float
+  date              DateTime         @default(now())
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  user              User             @relation("UserExpenses", fields: [userId], references: [id])
+  userId            Int
+  ExpenseCategory   ExpenseCategory? @relation(fields: [expenseCategoryId], references: [id])
+  expenseCategoryId Int?
+
+  @@index([date])
+  @@index([userId])
+}
+
+model Income {
+  id               Int             @id @unique @default(autoincrement())
+  description      String
+  amount           Float
+  category         String
+  date             DateTime        @default(now())
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  user             User            @relation("UserIncomes", fields: [userId], references: [id])
+  userId           Int
+  incomeCategory   IncomeCategory? @relation(fields: [incomeCategoryId], references: [id])
+  incomeCategoryId Int?
+
+  @@index([category])
+  @@index([date])
+  @@index([userId])
+}
+
+model IncomeCategory {
+  id     Int      @id @unique @default(autoincrement())
+  name   String   @unique
+  Income Income[]
+
+  @@index([name])
+}
+
+model ExpenseCategory {
+  id      Int       @id @unique @default(autoincrement())
+  name    String    @unique
+  Expense Expense[]
+
+  @@index([name])
+}
